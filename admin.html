@@ -1,0 +1,541 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>FarelPair Admin Panel</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg1:#05060a;
+      --bg2:#071428;
+      --card:#0f1724;
+      --accent:#06b6d4;
+      --accent-2:#2b9bd6;
+      --muted:#9aa6b2;
+    }
+    body{
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+      background: linear-gradient(180deg,var(--bg1),var(--bg2));
+      color: #e6eef8;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+    }
+    .glass{
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border: 1px solid rgba(255,255,255,0.04);
+      backdrop-filter: blur(6px);
+      border-radius: 12px;
+    }
+    .btn-primary{ background: linear-gradient(90deg,var(--accent),var(--accent-2)); color:#041022; padding:.6rem .9rem; border-radius:8px; font-weight:600; }
+    .btn-ghost{ background: transparent; border:1px solid rgba(255,255,255,0.06); padding:.5rem .75rem; border-radius:8px; color:inherit; }
+    .soft{ color:var(--muted); }
+    table td, table th { padding: .6rem .75rem; vertical-align: middle; }
+    .kbd { background: rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.04); padding:.18rem .4rem; border-radius:6px; font-size:.85rem; }
+    .small { font-size:.92rem; }
+  </style>
+</head>
+<body class="min-h-screen">
+
+  <header class="px-6 py-5 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-11 h-11 rounded-xl flex items-center justify-center text-xl font-semibold" style="background:linear-gradient(90deg,var(--accent),var(--accent-2)); color:#041022">FP</div>
+      <div>
+        <div class="text-lg font-semibold">FarelPair Admin Panel</div>
+        <div class="text-xs soft -mt-0.5">Kelola user, kredit & order IMEI</div>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <a href="index.html" class="btn-ghost">← Kembali ke Halaman Utama</a>
+      <button id="btnLogoutTop" class="btn-ghost hidden">Logout</button>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-6 pb-10">
+    <!-- LOGIN CARD -->
+    <section id="loginCard" class="max-w-md mx-auto glass p-6 mt-6">
+      <h2 class="text-xl font-semibold mb-3 text-center">Login Admin</h2>
+      <div class="space-y-3">
+        <input id="adminUser" placeholder="Username" class="w-full p-2 rounded bg-[rgba(255,255,255,0.02)] border border-white/5">
+        <input id="adminPass" placeholder="Password" type="password" class="w-full p-2 rounded bg-[rgba(255,255,255,0.02)] border border-white/5">
+        <div class="flex gap-2">
+          <button id="btnLogin" class="btn-primary flex-1">Login</button>
+        </div>
+        <div class="text-xs soft text-center">Default admin: <span class="kbd">admin</span> / <span class="kbd">farel123</span></div>
+      </div>
+    </section>
+
+    
+
+    <!-- ADMIN DASHBOARD -->
+    <section id="adminPanel" class="hidden space-y-6 mt-6">
+
+      <!-- Welcome & Actions -->
+      <div class="glass p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <div class="text-lg font-semibold">Selamat datang, <span id="adminNameDisplay">Admin</span></div>
+          <div class="text-xs soft mt-1">Kelola semua akun & order disini.</div>
+        </div>
+        <div class="flex gap-2">
+          <button id="btnReload" class="btn-ghost">Refresh Data</button>
+          <button id="btnLogout" class="btn-ghost">Logout</button>
+        </div>
+      </div>
+
+      <!-- Users + Credit -->
+      <div class="glass p-4">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-semibold">Daftar Pengguna</h3>
+          <div class="flex items-center gap-2">
+            <input id="filterUser" placeholder="Cari username..." class="p-2 rounded bg-[rgba(255,255,255,0.02)] border border-white/5 small">
+            <button id="btnScanUsers" class="btn-ghost">Scan</button>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left">
+            <thead class="soft text-xs uppercase">
+              <tr>
+                <th>Username</th>
+                <th>Nama</th>
+                <th class="text-right">Credit</th>
+                <th class="text-right">Role</th>
+                <th class="text-right">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="usersTableBody">
+              <tr><td colspan="5" class="soft p-3">Memuat...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="mt-4 grid md:grid-cols-3 gap-2">
+          <input id="creditUsername" placeholder="Username tujuan" class="p-2 rounded bg-[rgba(255,255,255,0.02)] border border-white/5">
+          <input id="creditAmount" placeholder="Jumlah credit" type="number" min="1" class="p-2 rounded bg-[rgba(255,255,255,0.02)] border border-white/5">
+          <button id="btnAddCredit" class="btn-primary">Tambah Credit</button>
+        </div>
+        <div id="creditMsg" class="mt-2 soft text-sm"></div>
+      </div>
+
+      <!-- Orders -->
+      <div class="glass p-4">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-semibold">Daftar Order IMEI</h3>
+          <div class="soft text-sm">Klik status untuk ubah → perubahan tersimpan.</div>
+        </div>
+
+        <div class="overflow-x-auto max-h-96" style="overflow:auto;">
+          <table class="w-full text-left">
+            <thead class="soft text-xs uppercase">
+              <tr>
+                <th>ID</th>
+                <th>Username</th>
+                <th>IMEI</th>
+                <th>Service</th>
+                <th>Tanggal</th>
+                <th>Status</th>
+                <th class="text-right">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="ordersTableBody">
+              <tr><td colspan="7" class="soft p-3">Memuat...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="py-6 text-center soft">
+    © 2025 FarelPair — Admin Panel
+  </footer>
+
+  <!-- MODAL SIMPLE -->
+  <div id="modal" class="fixed inset-0 hidden items-center justify-center bg-black/60 z-50 p-4">
+    <div class="bg-card rounded-xl w-full max-w-lg p-6">
+      <div id="modalBody"></div>
+      <div class="mt-4 flex justify-end">
+        <button id="modalClose" class="btn-ghost">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* admin.html
+   - uses same localStorage keys as index (fp_users, fp_orders, fp_session)
+   - features: admin login, list users, add credit by username, delete user, list orders, change status
+*/
+
+const DB = {
+  usersKey: 'fp_users',
+  sessionKey: 'fp_admin_session', // admin session separate
+  // init: create admin default and migrate old shapes if needed
+  init(){
+    // migrate if older fp_users exist but with 'email' instead of 'username'
+    let raw = localStorage.getItem(this.usersKey);
+    if(raw){
+      try {
+        let arr = JSON.parse(raw);
+        // if first element has email but not username -> convert
+        if(arr.length && arr[0].email && !arr[0].username){
+          arr = arr.map(u=>{
+            const username = (u.username) ? u.username : (u.email ? u.email.split('@')[0] : (u.name || 'user') );
+            return {
+              username,
+              name: u.name || username,
+              password: u.password || 'changeme',
+              credits: u.credits || 0,
+              role: u.role || 'user'
+            };
+          });
+          localStorage.setItem(this.usersKey, JSON.stringify(arr));
+        }
+      } catch(e){ /* ignore parse errors */ }
+    }
+
+    // ensure users array exists
+    if(!localStorage.getItem(this.usersKey) || JSON.parse(localStorage.getItem(this.usersKey)).length === 0){
+      const admin = { username:'admin', name:'Farel Admin', password:'farel123', credits:1000, role:'admin' };
+      localStorage.setItem(this.usersKey, JSON.stringify([admin]));
+    } else {
+      // ensure admin exists
+      const users = JSON.parse(localStorage.getItem(this.usersKey));
+      if(!users.find(u=>u.username==='admin')){
+        users.unshift({ username:'admin', name:'Farel Admin', password:'farel123', credits:1000, role:'admin' });
+        localStorage.setItem(this.usersKey, JSON.stringify(users));
+      }
+    }
+
+    if(!localStorage.getItem(this.ordersKey)) localStorage.setItem(this.ordersKey, JSON.stringify([]));
+  },
+  getUsers(){ return JSON.parse(localStorage.getItem(this.usersKey) || '[]'); },
+  saveUsers(users){ localStorage.setItem(this.usersKey, JSON.stringify(users)); },
+  saveSession(admin){ localStorage.setItem(this.sessionKey, JSON.stringify(admin)); },
+  getSession(){ return JSON.parse(localStorage.getItem(this.sessionKey) || 'null'); },
+  clearSession(){ localStorage.removeItem(this.sessionKey); }
+};
+
+DB.init();
+
+/* UI refs */
+const loginCard = document.getElementById('loginCard');
+const adminPanel = document.getElementById('adminPanel');
+const adminNameDisplay = document.getElementById('adminNameDisplay');
+
+const usersTableBody = document.getElementById('usersTableBody');
+const ordersTableBody = document.getElementById('ordersTableBody');
+
+const filterUserInput = document.getElementById('filterUser');
+const creditMsg = document.getElementById('creditMsg');
+
+
+document.getElementById('btnLogin').onclick = adminLogin;
+document.getElementById('btnLogout').onclick = adminLogout;
+document.getElementById('btnLogoutTop').onclick = adminLogout;
+document.getElementById('btnReload').onclick = refreshAll;
+document.getElementById('btnScanUsers').onclick = renderUsers;
+document.getElementById('btnAddCredit').onclick = handleAddCredit;
+document.getElementById('modalClose').onclick = ()=> { document.getElementById('modal').classList.add('hidden'); };
+
+/* perform auto-login if session exists */
+(function tryRestore(){
+  const sess = DB.getSession();
+  if(sess){
+    showAdminPanel(sess.username);
+  }
+})();
+
+function adminLogin(){
+  const user = document.getElementById('adminUser').value.trim().toLowerCase();
+  const pass = document.getElementById('adminPass').value.trim();
+  if(!user || !pass) return alert('Isi username & password');
+  const users = DB.getUsers();
+  const admin = users.find(u => u.username === user && u.password === pass && u.role === 'admin');
+  if(!admin) return alert('Username atau password salah / bukan admin');
+  DB.saveSession({ username: admin.username });
+  showAdminPanel(admin.username);
+}
+
+
+function adminLogout(){
+  DB.clearSession();
+  adminPanel.classList.add('hidden');
+  loginCard.classList.remove('hidden');
+  document.getElementById('btnLogoutTop').classList.add('hidden');
+  // clear login inputs for security
+  document.getElementById('adminUser').value = '';
+  document.getElementById('adminPass').value = '';
+}
+
+/* show admin UI */
+function showAdminPanel(username){
+  const users = DB.getUsers();
+  const admin = users.find(u=>u.username === username && u.role === 'admin');
+  if(!admin) { alert('Admin tidak ditemukan.'); DB.clearSession(); return; }
+  loginCard.classList.add('hidden');
+  adminPanel.classList.remove('hidden');
+  adminNameDisplay.innerText = admin.name || admin.username;
+  document.getElementById('btnLogoutTop').classList.remove('hidden');
+  renderUsers();
+}
+
+/* render users table */
+function renderUsers(){
+  const users = DB.getUsers();
+  const q = (filterUserInput.value || '').trim().toLowerCase();
+  const list = users.filter(u => !q || u.username.includes(q));
+  if(list.length === 0){
+    usersTableBody.innerHTML = `<tr><td colspan="5" class="soft p-3">Tidak ada user.</td></tr>`;
+    return;
+  }
+  usersTableBody.innerHTML = list.map(u=>{
+    return `<tr class="border-t border-white/6">
+      <td class="font-medium">${u.username}</td>
+      <td class="soft">${u.name || '-'}</td>
+      <td class="text-right font-semibold">${u.credits || 0}</td>
+      <td class="text-right soft">${u.role || 'user'}</td>
+      <td class="text-right">
+        <button class="btn-ghost btn-view" data-username="${u.username}">Lihat</button>
+        <button class="btn-ghost btn-del" data-username="${u.username}">Hapus</button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  // attach view & delete handlers
+  document.querySelectorAll('.btn-view').forEach(b=>{
+    b.addEventListener('click', (e)=>{
+      const uname = e.target.dataset.username;
+      showUserDetail(uname);
+    });
+  });
+  document.querySelectorAll('.btn-del').forEach(b=>{
+    b.addEventListener('click', (e)=>{
+      const uname = e.target.dataset.username;
+      if(uname === 'admin') return alert('Admin default tidak bisa dihapus.');
+      if(!confirm(`Hapus user "${uname}"? Semua order milik user akan tetap ada.`)) return;
+      let users = DB.getUsers();
+      users = users.filter(u=>u.username !== uname);
+      DB.saveUsers(users);
+      creditMsg.innerText = `✅ User ${uname} dihapus.`;
+      renderUsers();
+    });
+  });
+}
+
+/* show single user detail modal */
+async function showUserDetail(username) {
+  const users = DB.getUsers();
+  const u = users.find(x => x.username === username);
+  if (!u) return alert('User tidak ditemukan');
+
+  const snapshot = await get(ref(db, "orders"));
+  const orders = [];
+  snapshot.forEach(child => {
+    const o = child.val();
+    if (o.username === username) orders.push(o);
+  });
+
+  let html = `
+    <h3 class="text-lg font-semibold mb-2">Detail User: ${username}</h3>
+    <div class="soft mb-2">Total Order: ${orders.length}</div>
+    <ul class="list-disc pl-5">
+      ${orders.map(o => `<li>${o.imei} — ${o.status}</li>`).join('')}
+    </ul>
+  `;
+  document.getElementById('modalBody').innerHTML = html;
+  document.getElementById('modal').classList.remove('hidden');
+}
+
+
+function handleAddCredit(){
+  const uname = (document.getElementById('creditUsername').value || '').trim().toLowerCase();
+  const amount = parseInt(document.getElementById('creditAmount').value);
+  if(!uname) return alert('Masukkan username tujuan');
+  if(!amount || amount <= 0) return alert('Masukkan jumlah credit yang valid');
+  let users = DB.getUsers();
+  const idx = users.findIndex(u=>u.username === uname);
+  if(idx === -1) return alert('⚠️ Username tidak ditemukan');
+  users[idx].credits = (users[idx].credits || 0) + amount;
+  DB.saveUsers(users);
+  creditMsg.innerText = `✅ Berhasil menambah ${amount} credit ke ${uname}`;
+  document.getElementById('creditUsername').value = '';
+  document.getElementById('creditAmount').value = '';
+  renderUsers();
+}
+
+
+// Orders dari Firebase
+async function renderOrdersFirebase() { 
+  const ordersRef = ref(db, "orders");
+  const tbody = document.getElementById("ordersTableBody");
+
+  onValue(ordersRef, (snapshot) => {
+    tbody.innerHTML = "";
+    if (!snapshot.exists()) {
+      tbody.innerHTML = `<tr><td colspan="7" class="soft p-3">Belum ada order.</td></tr>`;
+      return;
+    }
+
+    snapshot.forEach((child) => {
+      const id = child.key;
+      const o = child.val();
+      const tr = document.createElement("tr");
+      tr.className = "border-t border-white/6";
+      tr.innerHTML = `
+        <td>${id}</td>
+        <td>${o.username}</td>
+        <td>${o.imei}</td>
+        <td>${o.layanan}</td>
+        <td class="soft small">${o.waktu || "-"}</td>
+        <td>
+          <select data-id="${id}" class="statusSel p-1 rounded bg-[rgba(255,255,255,0.02)] border border-white/5 small">
+            <option ${o.status==='Pending'?'selected':''}>Pending</option>
+            <option ${o.status==='Proses'?'selected':''}>Proses</option>
+            <option ${o.status==='Done'?'selected':''}>Done</option>
+            <option ${o.status==='Gagal'?'selected':''}>Gagal</option>
+          </select>
+        </td>
+        <td class="text-right">
+          <button class="btn-ghost btn-delete-order" data-id="${id}">Hapus</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    // event ubah status
+    document.querySelectorAll(".statusSel").forEach(sel => {
+      sel.addEventListener("change", async (e) => {
+        const id = e.target.dataset.id;
+        const val = e.target.value;
+        await update(ref(db, "orders/" + id), { status: val });
+        alert("✅ Status order diperbarui jadi " + val);
+      });
+    });
+
+    // event hapus order
+    document.querySelectorAll(".btn-delete-order").forEach(btn => {
+      btn.addEventListener("click", async (e) => {
+        const id = e.target.dataset.id;
+        if (!confirm("Hapus order ini?")) return;
+        await remove(ref(db, "orders/" + id));
+        alert("🗑️ Order dihapus.");
+      });
+    });
+  });
+}
+
+
+
+  
+
+/* refresh both lists */
+function refreshAll(){
+  renderUsers();
+}
+
+
+/* initial render when admin is active */
+if(DB.getSession()){
+  showAdminPanel(DB.getSession().username);
+} else {
+  // show login card (default)
+  loginCard.classList.remove('hidden');
+}
+
+/* expose some funcs for convenience (debug) */
+window._DB = DB;
+</script>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+  import { getDatabase, ref, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBeSOiSfXC00L3UNSGTgwDURtf5lZ28CdQ",
+    authDomain: "farelpair.firebaseapp.com",
+    databaseURL: "https://farelpair-default-rtdb.firebaseio.com",
+    projectId: "farelpair",
+    storageBucket: "farelpair.firebasestorage.app",
+    messagingSenderId: "702750713",
+    appId: "1:702750713:web:cc0e618ef061e7f06f2728",
+    measurementId: "G-EZJRWP6T0D"
+  };
+
+  // 🔥 Inisialisasi Firebase
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  // 🧩 Fungsi untuk ambil data orders
+  async function renderOrdersFirebase() {
+    const ordersRef = ref(db, "orders");
+    const tbody = document.getElementById("ordersTableBody");
+
+    onValue(ordersRef, (snapshot) => {
+      tbody.innerHTML = "";
+
+      if (!snapshot.exists()) {
+        tbody.innerHTML = `<tr><td colspan="7" class="soft p-3">Belum ada order.</td></tr>`;
+        return;
+      }
+
+      snapshot.forEach((child) => {
+        const id = child.key;
+        const o = child.val();
+
+        const tr = document.createElement("tr");
+        tr.className = "border-t border-white/10";
+        tr.innerHTML = `
+        <td>${id}</td>
+        <td>${o.username}</td>
+        <td>${o.imei}</td>
+        <td>${o.layanan}</td>
+        <td class="soft small">${o.waktu || "-"}</td>
+        <td>
+          <select data-id="${id}" class="statusSel p-1 rounded bg-[rgba(255,255,255,0.02)] border border-white/5 small">
+            <option ${o.status==='Pending'?'selected':''}>Pending</option>
+            <option ${o.status==='Proses'?'selected':''}>Proses</option>
+            <option ${o.status==='Done'?'selected':''}>Done</option>
+            <option ${o.status==='Gagal'?'selected':''}>Gagal</option>
+          </select>
+        </td>
+        <td class="text-right">
+          <button class="btn-ghost btn-delete-order" data-id="${id}">Hapus</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    // event ubah status
+    document.querySelectorAll(".statusSel").forEach(sel => {
+      sel.addEventListener("change", async (e) => {
+        const id = e.target.dataset.id;
+        const val = e.target.value;
+        await update(ref(db, "orders/" + id), { status: val });
+        alert("✅ Status order diperbarui jadi " + val);
+      });
+    });
+
+    // event hapus order
+    document.querySelectorAll(".btn-delete-order").forEach(btn => {
+      btn.addEventListener("click", async (e) => {
+        const id = e.target.dataset.id;
+        if (!confirm("Hapus order ini?")) return;
+        await remove(ref(db, "orders/" + id));
+        alert("🗑️ Order dihapus.");
+      });
+    });
+  });
+}
+ 
+
+  // ✅ Jalankan render setelah fungsi didefinisikan
+  renderOrdersFirebase();
+</script>
+
+</body>
+</html>

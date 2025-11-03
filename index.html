@@ -1,0 +1,590 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>FarmPair — Unblock IMEI</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#071428;
+      --card:#0f1724;
+      --accent:#06b6d4; /* cyan-blue */
+      --accent-2:#2b9bd6;
+      --muted:#9aa6b2;
+      --glass-border: rgba(255,255,255,0.04);
+    }
+    html,body{ height:100%; }
+    body{
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background:
+        radial-gradient(900px 300px at 10% 12%, rgba(6,182,212,0.04), transparent),
+        linear-gradient(180deg,#04060a 0%, #071428 40%, #081226 100%);
+      color: #e6eef8;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      line-height:1.4;
+    }
+
+    /* glass card */
+    .glass {
+      background: linear-gradient(180deg, rgba(255,255,255,0.025), rgba(255,255,255,0.02));
+      border: 1px solid var(--glass-border);
+      backdrop-filter: blur(6px);
+    }
+    .soft { color: var(--muted); }
+    .btn-primary {
+      background: linear-gradient(90deg,var(--accent), var(--accent-2));
+      color: #041022;
+      box-shadow: 0 6px 18px rgba(43,155,214,0.12);
+      transition: transform .14s ease, box-shadow .14s ease, opacity .14s;
+    }
+    .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 10px 28px rgba(43,155,214,0.18); opacity: .98; }
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.06);
+      color: #e6eef8;
+      transition: background .14s ease, transform .14s;
+    }
+    .btn-ghost:hover { background: rgba(255,255,255,0.015); transform: translateY(-2px); }
+
+    /* table row hover */
+    table tr:hover { background: linear-gradient(90deg, rgba(6,182,212,0.02), rgba(43,155,214,0.02)); }
+
+    /* entrance animation */
+    .fade { transform: translateY(10px); opacity: 0; transition: all .48s cubic-bezier(.2,.9,.2,1); will-change: transform, opacity; }
+    .fade.show { transform: translateY(0); opacity: 1; }
+
+    /* modal */
+    #modal { transition: opacity .18s ease; }
+    .modal-fade { opacity: 0; transform: translateY(6px); transition: all .18s ease; }
+    .modal-fade.show { opacity: 1; transform: translateY(0); }
+
+    /* responsive tweaks */
+    @media (max-width: 640px){
+      .hero-illu { width: 220px; }
+      header { left: 12px; right: 12px; }
+    }
+
+    a { text-decoration: none; }
+    .muted-small { color: #b7c6d1; font-size: .95rem; }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <header class="fixed inset-x-6 top-6 z-50">
+    <div class="max-w-6xl mx-auto glass rounded-xl px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 rounded-xl flex items-center justify-center text-xl font-semibold"
+             style="background:linear-gradient(90deg,var(--accent),var(--accent-2)); color:#041022;">FP</div>
+        <div>
+          <div class="text-lg font-semibold">FarmPair</div>
+          <div class="text-xs soft -mt-0.5">Unblock IMEI — cepat & terpercaya</div>
+        </div>
+      </div>
+
+      <nav class="hidden md:flex items-center gap-4 text-sm soft">
+        <a href="#services" class="hover:text-white">Layanan</a>
+        <a href="#howto" class="hover:text-white">Cara Pakai</a>
+        <a href="#pricing" class="hover:text-white">Harga</a>
+        <a href="#contact" class="hover:text-white">Kontak</a>
+        <button id="openAuth" class="ml-4 px-3 py-1.5 rounded-md btn-ghost">Login / Daftar</button>
+        <a href="admin.html" class="ml-2 px-3 py-1.5 rounded-md glass text-sm">Login Admin</a>
+      </nav>
+
+      <div class="md:hidden">
+        <button id="openAuthMobile" class="p-2 rounded-md btn-ghost">Login</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="pt-36 max-w-6xl mx-auto px-6 pb-28">
+
+    <!-- HERO -->
+    <section class="grid md:grid-cols-2 gap-8 items-center mb-12">
+      <div class="fade" id="hero-left">
+        <h1 class="text-3xl md:text-4xl font-extrabold leading-tight mb-3">
+          Buka Kunci IMEI — <span style="color:var(--accent)">Cepat · Aman · Terpercaya</span>
+        </h1>
+        <p class="soft mb-5 max-w-xl">
+          FarmPair membantu mengaktifkan kembali IMEI perangkat dengan proses otomatis dan transparan.
+          Gunakan sistem kredit — pilih layanan, bayar dengan credit, dan pantau status sampai <strong>Done</strong>.
+        </p>
+
+        <div class="flex gap-3 flex-wrap">
+          <a href="#pricing" class="px-5 py-3 rounded-lg btn-primary shadow">Lihat Harga</a>
+          <button id="cta-order" class="px-5 py-3 rounded-lg btn-ghost">Cek Status Order</button>
+        </div>
+
+        <div class="mt-6 text-sm soft">
+          <div>Minimal saldo untuk proses IMEI: <strong>1 credit</strong></div>
+          <div class="mt-2">Butuh bantuan? Admin: <a href="https://wa.me/6282241664467" class="text-cyan-300 hover:underline">0822-4166-4467 (WA)</a></div>
+        </div>
+      </div>
+
+     
+
+    <!-- SERVICES / SERVER STATUS -->
+    <section id="services" class="mb-12 fade">
+      <div class="glass rounded-2xl p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold">Authorization Server Status And Credit</h3>
+          <div class="soft text-sm">Harga dasar: Rp10.000 / 1 credit</div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm">
+            <thead class="soft text-xs uppercase">
+              <tr>
+                <th class="px-3 py-2">List Server Name</th>
+                <th class="px-3 py-2">Harga (Credit)</th>
+                <th class="px-3 py-2">Status</th>
+                <th class="px-3 py-2">Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="border-t border-white/6">
+                <td class="px-3 py-3">Server Pairing IMEI 3 Bulan (Garansi)</td>
+                <td class="px-3 py-3 font-medium text-cyan-300">23 Credit</td>
+                <td class="px-3 py-3 text-emerald-300 font-semibold">Online</td>
+                <td class="px-3 py-3"><button class="px-3 py-1 rounded-md btn-primary">Pesan</button></td>
+              </tr>
+              <tr class="border-t border-white/6">
+                <td class="px-3 py-3">Server Pairing IMEI DIGIPOS (Garansi 1bln)</td>
+                <td class="px-3 py-3 font-medium text-cyan-300">17 Credit</td>
+                <td class="px-3 py-3 text-emerald-300 font-semibold">Online</td>
+                <td class="px-3 py-3"><button class="px-3 py-1 rounded-md btn-primary">Pesan</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- HOW TO & PRICING -->
+    <section id="howto" class="grid md:grid-cols-2 gap-6 mb-12 fade">
+      <div class="glass rounded-2xl p-6">
+        <h4 class="text-lg font-semibold mb-3">Cara Menggunakan FarmPair</h4>
+        <ol class="list-decimal ml-5 soft space-y-2">
+          <li>Daftar akun (klik Login / Daftar).</li>
+          <li>Topup credit melalui admin / FarmStore.</li>
+          <li>Pilih layanan (1 bulan / 3 bulan) dan masukkan IMEI.</li>
+          <li>System memproses; cek status order sampai <strong>Done</strong>.</li>
+        </ol>
+        <p class="soft mt-3 text-sm">Estimasi proses: <strong>1–10 menit</strong> (tergantung antrian & server).</p>
+      </div>
+
+      <div id="pricing" class="glass rounded-2xl p-6">
+        <h4 class="text-lg font-semibold mb-3">Daftar Harga</h4>
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="font-medium">Server Pairing IMEI DIGIPOS (Garansi 1bln)</div>
+              <div class="soft text-sm">Aktif 30 hari</div>
+            </div>
+            <div class="text-2xl font-bold text-cyan-300">17 Credit</div>
+          </div>
+
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="font-medium">Server Pairing IMEI 3 Bulan (Garansi)</div>
+              <div class="soft text-sm">Aktif 90 hari</div>
+            </div>
+            <div class="text-2xl font-bold text-cyan-300">23 Credit</div>
+          </div>
+
+          <div class="mt-4 soft text-xs">⚠️ Minimal saldo untuk membuat order: <strong>1 Credit</strong></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- AUTH -->
+    <section id="auth" class="mb-12">
+      <div class="max-w-md mx-auto glass rounded-2xl p-6">
+        <h4 class="text-lg font-semibold mb-4 text-center">Masuk / Daftar</h4>
+        <div id="auth-outer">
+          <div class="flex gap-3 mb-4">
+            <button id="btnShowLogin" class="flex-1 px-4 py-2 rounded-md btn-primary">Login</button>
+            <button id="btnShowRegister" class="flex-1 px-4 py-2 rounded-md btn-ghost">Buat Akun</button>
+          </div>
+          <div id="formContainer"></div>
+        </div>
+
+        <div class="mt-4 soft text-sm text-center">Atau hubungi admin untuk topup: <a href="https://wa.me/6282241664467" class="text-cyan-300">0822-4166-4467</a></div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="text-center mb-12 fade">
+      <div class="inline-flex bg-[rgba(3,7,18,0.6)] rounded-2xl p-1">
+        <div class="rounded-xl px-6 py-4">
+          <div class="text-lg font-semibold">Siap untuk lakukan Unblock IMEI?</div>
+          <div class="soft mt-1">Buat akun lalu pilih layanan — semua bisa dikelola dari dashboard kamu.</div>
+          <div class="mt-4 flex justify-center gap-3">
+            <button id="btnStart" class="px-5 py-2 rounded-md btn-primary">Mulai Sekarang</button>
+            <button id="btnContact" class="px-5 py-2 rounded-md btn-ghost">Hubungi Admin</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="py-6 text-center soft">
+    © 2025 FarelPair — All rights reserved • <a href="#" class="text-cyan-300">Syarat & Ketentuan</a>
+  </footer>
+
+  <!-- MODAL (generic) -->
+  <div id="modal" class="fixed inset-0 hidden items-center justify-center bg-black/60 z-50 p-4">
+    <div class="bg-card rounded-xl w-full max-w-lg p-6 modal-fade">
+      <div id="modalBody"></div>
+      <div class="mt-4 flex justify-end">
+        <button id="modalClose" class="px-3 py-2 rounded-md btn-ghost">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* =========================
+   FarelPair index.html — username based auth
+   ========================== */
+
+const COST_1M = 17;
+const COST_3M = 23;
+const MIN_REQUIRED = 1;
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.fade').forEach((el, i) => setTimeout(()=> el.classList.add('show'), 80*i));
+});
+
+const DB = {
+  usersKey: 'fp_users',
+  sessionKey: 'fp_session',
+  ordersKey: 'fp_orders',
+  init(){
+    if(!localStorage.getItem(this.usersKey)){
+      const admin = { username:'admin', password:'farel123', credits:1000, role:'admin' };
+      localStorage.setItem(this.usersKey, JSON.stringify([admin]));
+    }
+    if(!localStorage.getItem(this.ordersKey)) localStorage.setItem(this.ordersKey, JSON.stringify([]));
+  },
+  getUsers(){ return JSON.parse(localStorage.getItem(this.usersKey) || '[]'); },
+  saveUsers(u){ localStorage.setItem(this.usersKey, JSON.stringify(u)); },
+  getSession(){ return JSON.parse(localStorage.getItem(this.sessionKey) || 'null'); },
+  saveSession(s){ localStorage.setItem(this.sessionKey, JSON.stringify(s)); },
+  clearSession(){ localStorage.removeItem(this.sessionKey); },
+  getOrders(){ return JSON.parse(localStorage.getItem(this.ordersKey) || '[]'); },
+  saveOrders(o){ localStorage.setItem(this.ordersKey, JSON.stringify(o)); }
+};
+DB.init();
+
+const formContainer = document.getElementById('formContainer');
+
+function showLogin(){
+  formContainer.innerHTML = `
+    <form id="formLogin" class="space-y-3 modal-fade show">
+      <input id="liUser" type="text" placeholder="Username" class="w-full p-2 rounded-md bg-[rgba(255,255,255,0.02)] border border-white/5" required>
+      <input id="liPass" type="password" placeholder="Password" class="w-full p-2 rounded-md bg-[rgba(255,255,255,0.02)] border border-white/5" required>
+      <div class="flex gap-2">
+        <button type="submit" class="flex-1 px-3 py-2 rounded-md btn-primary">Login</button>
+        <button type="button" id="btnCancelLogin" class="flex-1 px-3 py-2 rounded-md btn-ghost">Batal</button>
+      </div>
+    </form>
+  `;
+  document.getElementById('formLogin').onsubmit = (e)=>{
+    e.preventDefault();
+    const user = document.getElementById('liUser').value.trim().toLowerCase();
+    const pass = document.getElementById('liPass').value.trim();
+    const users = DB.getUsers();
+    const u = users.find(x=>x.username===user && x.password===pass);
+    if(!u){ alert('Username atau password salah'); return; }
+    DB.saveSession({ username: u.username });
+    alert('Login berhasil');
+    renderAuthState();
+    formContainer.innerHTML = '';
+  };
+  document.getElementById('btnCancelLogin').onclick = () => { formContainer.innerHTML = ''; };
+}
+
+
+
+function showRegister() {
+  const { ref, set, get, update, child, push } = window.firebaseTools;
+const db = window.db;
+  formContainer.innerHTML = `
+    <form id="formReg" class="space-y-3 modal-fade show">
+      <input id="rgUser" type="text" placeholder="Buat username unik" class="w-full p-2 rounded-md bg-[rgba(255,255,255,0.02)] border border-white/5" required>
+      <input id="rgPass" type="password" placeholder="Password" class="w-full p-2 rounded-md bg-[rgba(255,255,255,0.02)] border border-white/5" required>
+      <div class="flex gap-2">
+        <button type="submit" class="flex-1 px-3 py-2 rounded-md btn-primary">Daftar</button>
+        <button type="button" id="btnCancelReg" class="flex-1 px-3 py-2 rounded-md btn-ghost">Batal</button>
+      </div>
+    </form>
+  `;
+
+  document.getElementById('formReg').onsubmit = async (e) => {
+    e.preventDefault();
+    const username = document.getElementById('rgUser').value.trim().toLowerCase();
+    const password = document.getElementById('rgPass').value.trim();
+
+    if (!username || !password) {
+      alert('Semua kolom wajib diisi!');
+      return;
+    }
+
+    const userRef = ref(db, 'users/' + username);
+
+    try {
+      const snapshot = await get(userRef);
+      if (snapshot.exists()) {
+        alert('Username sudah dipakai. Pilih username lain.');
+        return;
+      }
+
+      // Simpan ke Firebase
+      await set(userRef, {
+        username: username,
+        password: password,
+        credits: 0,
+        role: 'user',
+        createdAt: new Date().toISOString()
+      });
+
+      // Simpan sesi login lokal
+      localStorage.setItem('fp_session', JSON.stringify({ username }));
+
+      alert('✅ Pendaftaran berhasil & login otomatis!');
+      renderAuthState();
+      formContainer.innerHTML = '';
+    } catch (error) {
+      console.error(error);
+      alert('❌ Gagal daftar: ' + error.message);
+    }
+  };
+
+  document.getElementById('btnCancelReg').onclick = () => {
+    formContainer.innerHTML = '';
+  };
+}
+
+function renderAuthState(){
+  const sess = DB.getSession();
+  if(!sess){ return; }
+  const users = DB.getUsers();
+  const u = users.find(x=>x.username === sess.username);
+  if(!u) { DB.clearSession(); return; }
+  const outer = document.getElementById('auth-outer');
+  if(outer){
+    outer.innerHTML = `
+      <div class="text-center">
+        <div class="text-lg font-semibold mb-1">Halo, ${u.username}</div>
+        <div class="mb-3">Saldo: <strong>${u.credits}</strong> credit</div>
+        <div class="flex gap-2 justify-center">
+          <button id="btnOpenDashboard" class="px-4 py-2 rounded-md btn-primary">Dashboard</button>
+          <button id="btnLogout" class="px-4 py-2 rounded-md btn-ghost">Logout</button>
+        </div>
+      </div>
+    `;
+    document.getElementById('btnLogout').onclick = ()=> { DB.clearSession(); location.reload(); };
+    document.getElementById('btnOpenDashboard').onclick = openDashboard;
+  }
+}
+async function openDashboard() {
+  const sess = DB.getSession();
+  if (!sess) return alert('Silakan login terlebih dahulu.');
+
+  const { ref, get } = window.firebaseTools;
+  const db = window.db;
+
+  const userRef = ref(db, "users/" + sess.username);
+  const ordersRef = ref(db, "orders");
+
+  try {
+    // Ambil saldo user dari Firebase
+    const userSnap = await get(userRef);
+    const userData = userSnap.exists() ? userSnap.val() : { credits: 0 };
+
+    // Ambil semua order dari Firebase
+    const ordersSnap = await get(ordersRef);
+    const orders = [];
+    if (ordersSnap.exists()) {
+      ordersSnap.forEach((snap) => {
+        const order = snap.val();
+        // Simpan ID pesanan (key Firebase)
+        orders.push({
+          id: snap.key,
+          ...order
+        });
+      });
+    }
+
+    // Filter hanya order milik user login
+    const userOrders = orders.filter(o => o.username === sess.username);
+
+    // Render modal dashboard
+    const html = `
+      <h3 class="text-lg font-semibold mb-2">Dashboard — ${sess.username}</h3>
+      <div class="mb-3">Saldo: <strong>${userData.credits}</strong> credit</div>
+      <div class="mb-3">
+        <button id="btnTopup" class="px-3 py-2 rounded-md btn-primary">Minta Topup</button>
+        <button id="btnOrders" class="ml-2 px-3 py-2 rounded-md btn-ghost">Riwayat Order (${userOrders.length})</button>
+      </div>
+      <div id="ordersList" class="max-h-64 overflow-auto mt-3"></div>
+    `;
+    showModal(html);
+
+    document.getElementById('btnTopup').onclick = () => window.open('https://wa.me/6282241664467', '_blank');
+
+    // Tombol lihat riwayat order
+    document.getElementById('btnOrders').onclick = () => {
+      const listEl = document.getElementById('ordersList');
+      if (!userOrders.length) {
+        listEl.innerHTML = '<div class="soft text-sm">Belum ada order.</div>';
+        return;
+      }
+
+      listEl.innerHTML = userOrders.map(o => `
+        <div class="p-2 rounded-md glass mb-2">
+          <div><b>ID:</b> ${o.id}</div>
+          <div><b>IMEI:</b> ${o.imei}</div>
+          <div><b>Layanan:</b> ${o.layanan}</div>
+          <div><b>Status:</b> ${o.status}</div>
+          <div class="text-sm text-gray-400">${o.waktu || '-'}</div>
+        </div>
+      `).join('');
+    };
+
+  } catch (error) {
+    console.error(error);
+    alert('❌ Gagal memuat data dashboard.');
+  }
+}
+
+
+
+
+async function orderService(cost, layanan){
+  const { ref, set, push } = window.firebaseTools;
+  const db = window.db;
+  const sess = DB.getSession();
+  if(!sess){ showLogin(); return; }
+
+  const html = `
+    <h3 class="text-lg font-semibold mb-2">Pesan: ${layanan}</h3>
+    <form id="orderFormModal" class="space-y-3 modal-fade show">
+      <input id="imeii" type="text" required placeholder="Masukkan IMEI" class="w-full p-2 rounded-md bg-[rgba(255,255,255,0.02)] border border-white/5">
+      <div class="flex gap-2">
+        <button type="submit" class="flex-1 px-3 py-2 rounded-md btn-primary">Kirim Order</button>
+        <button type="button" id="cancelOrder" class="flex-1 px-3 py-2 rounded-md btn-ghost">Batal</button>
+      </div>
+    </form>
+  `;
+  showModal(html);
+  document.getElementById('cancelOrder').onclick = hideModal;
+
+  document.getElementById('orderFormModal').onsubmit = async (e)=>{
+    e.preventDefault();
+    const imei = document.getElementById('imeii').value.trim();
+    const users = DB.getUsers();
+    const sessObj = DB.getSession();
+    const u = users.find(x=>x.username === sessObj.username);
+    if(!u) return alert('Akun tidak ditemukan');
+    if(u.credits < cost) return alert('Saldo tidak cukup. Hubungi admin.');
+
+    // potong saldo di local
+    u.credits -= cost;
+    DB.saveUsers(users);
+
+    try {
+      // simpan order ke Firebase yang benar
+      const ordersRef = ref(db, "orders");
+      const newOrderRef = push(ordersRef);
+      await set(newOrderRef, {
+        username: u.username,
+        imei,
+        layanan,
+        status: "Pending",
+        cost,
+        waktu: new Date().toLocaleString()
+      });
+
+      hideModal();
+      alert(`✅ Order berhasil dikirim ke admin! Saldo terpotong ${cost} credit.`);
+      renderAuthState();
+    } catch (error) {
+      console.error(error);
+      alert('❌ Gagal kirim order ke Firebase.');
+    }
+  };
+}
+
+
+
+function showModal(html){
+  document.getElementById('modalBody').innerHTML = html;
+  const modal = document.getElementById('modal');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  document.querySelector('#modal .modal-fade')?.classList.add('show');
+}
+function hideModal(){ 
+  const modal = document.getElementById('modal');
+  modal.classList.add('hidden'); 
+}
+
+document.getElementById('openAuth')?.addEventListener('click', showLogin);
+document.getElementById('openAuthMobile')?.addEventListener('click', showLogin);
+document.getElementById('btnShowLogin')?.addEventListener('click', showLogin);
+document.getElementById('btnShowRegister')?.addEventListener('click', showRegister);
+
+document.querySelectorAll('button').forEach(btn => {
+  if(btn.innerText.trim().toLowerCase().includes('pesan')){
+    btn.addEventListener('click', (e)=>{
+      const row = e.target.closest('tr');
+      if(!row) return orderService(COST_1M, 'Pairing 1 Bulan');
+      const name = row.cells[0]?.innerText || '';
+      if(name.toLowerCase().includes('3 bulan')) orderService(COST_3M, 'Pairing 3 Bulan');
+      else orderService(COST_1M, 'Pairing 1 Bulan');
+    });
+  }
+});
+
+document.getElementById('modalClose')?.addEventListener('click', hideModal);
+if(localStorage.getItem(DB.sessionKey)) renderAuthState();
+</script>
+
+<!-- di atas ini isi body kamu -->
+
+<!-- Firebase & script utama -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+  import { getDatabase, ref, set, get, update, child, push } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBeSOiSfXC00L3UNSGTgwDURtf5lZ28CdQ",
+    authDomain: "farelpair.firebaseapp.com",
+    databaseURL: "https://farelpair-default-rtdb.firebaseio.com",
+    projectId: "farelpair",
+    storageBucket: "farelpair.firebasestorage.app",
+    messagingSenderId: "702750713",
+    appId: "1:702750713:web:cc0e618ef061e7f06f2728",
+    measurementId: "G-EZJRWP6T0D"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  window.db = db;
+  window.firebaseTools = { ref, set, get, update, child, push };
+
+  console.log("✅ Firebase berhasil tersambung");
+</script>
+
+</body>
+</html>
+
+
