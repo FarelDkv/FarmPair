@@ -250,16 +250,45 @@ document.getElementById('modalClose').onclick = ()=> { document.getElementById('
   }
 })();
 
-function adminLogin(){
+async function adminLogin() {
   const user = document.getElementById('adminUser').value.trim().toLowerCase();
   const pass = document.getElementById('adminPass').value.trim();
-  if(!user || !pass) return alert('Isi username & password');
-  const users = DB.getUsers();
-  const admin = users.find(u => u.username === user && u.password === pass && u.role === 'admin');
-  if(!admin) return alert('Username atau password salah / bukan admin');
-  DB.saveSession({ username: admin.username });
-  showAdminPanel(admin.username);
+  if (!user || !pass) return alert('Isi username & password');
+
+  const { ref, get } = window.firebaseTools || {};
+  const db = window.db;
+
+  if (!db || !ref || !get) {
+    alert('⚠️ Firebase belum terhubung!');
+    return;
+  }
+
+  try {
+    const adminRef = ref(db, "admins/" + user);
+    const snap = await get(adminRef);
+
+    if (!snap.exists()) {
+      alert('❌ Admin tidak ditemukan di database.');
+      return;
+    }
+
+    const data = snap.val();
+    if (data.password !== pass) {
+      alert('❌ Password salah!');
+      return;
+    }
+
+    // Simpan sesi admin di localStorage
+    localStorage.setItem('fp_admin_session', JSON.stringify({ username: user }));
+
+    alert('✅ Login berhasil!');
+    showAdminPanel(user);
+  } catch (err) {
+    console.error('Login error:', err);
+    alert('Gagal login admin: ' + err.message);
+  }
 }
+
 
 
 function adminLogout(){
