@@ -32,6 +32,7 @@
       background: linear-gradient(180deg, rgba(255,255,255,0.025), rgba(255,255,255,0.02));
       border: 1px solid var(--glass-border);
       backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
     }
     .soft { color: var(--muted); }
     .btn-primary {
@@ -285,6 +286,9 @@ DB.init();
 const formContainer = document.getElementById('formContainer');
 
 function showLogin(){
+  const { ref, get } = window.firebaseTools;
+  const db = window.db;
+
   formContainer.innerHTML = `
     <form id="formLogin" class="space-y-3 modal-fade show">
       <input id="liUser" type="text" placeholder="Username" class="w-full p-2 rounded-md bg-[rgba(255,255,255,0.02)] border border-white/5" required>
@@ -295,18 +299,29 @@ function showLogin(){
       </div>
     </form>
   `;
-  document.getElementById('formLogin').onsubmit = (e)=>{
+
+  document.getElementById('formLogin').onsubmit = async (e)=>{
     e.preventDefault();
-    const user = document.getElementById('liUser').value.trim().toLowerCase();
-    const pass = document.getElementById('liPass').value.trim();
-    const users = DB.getUsers();
-    const u = users.find(x=>x.username===user && x.password===pass);
-    if(!u){ alert('Username atau password salah'); return; }
-    DB.saveSession({ username: u.username });
-    alert('Login berhasil');
-    renderAuthState();
-    formContainer.innerHTML = '';
+    const username = document.getElementById('liUser').value.trim().toLowerCase();
+    const password = document.getElementById('liPass').value.trim();
+
+    try {
+      const userRef = ref(db, 'users/' + username);
+      const snap = await get(userRef);
+      if (!snap.exists()) return alert('❌ Username tidak ditemukan.');
+      const data = snap.val();
+      if (data.password !== password) return alert('❌ Password salah.');
+
+      // Simpan sesi
+      localStorage.setItem('fp_session', JSON.stringify({ username }));
+      alert('✅ Login berhasil!');
+      renderAuthState();
+      formContainer.innerHTML = '';
+    } catch (err) {
+      alert('Gagal login: ' + err.message);
+    }
   };
+
   document.getElementById('btnCancelLogin').onclick = () => { formContainer.innerHTML = ''; };
 }
 
@@ -371,26 +386,43 @@ const db = window.db;
   };
 }
 
-function renderAuthState(){
+async function renderAuthState() {
   const sess = DB.getSession();
-  if(!sess){ return; }
-  const users = DB.getUsers();
-  const u = users.find(x=>x.username === sess.username);
-  if(!u) { DB.clearSession(); return; }
-  const outer = document.getElementById('auth-outer');
-  if(outer){
-    outer.innerHTML = `
-      <div class="text-center">
-        <div class="text-lg font-semibold mb-1">Halo, ${u.username}</div>
-        <div class="mb-3">Saldo: <strong>${u.credits}</strong> credit</div>
-        <div class="flex gap-2 justify-center">
-          <button id="btnOpenDashboard" class="px-4 py-2 rounded-md btn-primary">Dashboard</button>
-          <button id="btnLogout" class="px-4 py-2 rounded-md btn-ghost">Logout</button>
+  if (!sess) return;
+
+  const { ref, get } = window.firebaseTools;
+  const db = window.db;
+
+  try {
+    const userRef = ref(db, "users/" + sess.username);
+    const snap = await get(userRef);
+
+    if (!snap.exists()) {
+      DB.clearSession();
+      return;
+    }
+
+    const u = snap.val();
+    const outer = document.getElementById("auth-outer");
+    if (outer) {
+      outer.innerHTML = `
+        <div class="text-center">
+          <div class="text-lg font-semibold mb-1">Halo, ${u.username}</div>
+          <div class="mb-3">Saldo: <strong>${u.credits}</strong> credit</div>
+          <div class="flex gap-2 justify-center">
+            <button id="btnOpenDashboard" class="px-4 py-2 rounded-md btn-primary">Dashboard</button>
+            <button id="btnLogout" class="px-4 py-2 rounded-md btn-ghost">Logout</button>
+          </div>
         </div>
-      </div>
-    `;
-    document.getElementById('btnLogout').onclick = ()=> { DB.clearSession(); location.reload(); };
-    document.getElementById('btnOpenDashboard').onclick = openDashboard;
+      `;
+      document.getElementById("btnLogout").onclick = () => {
+        DB.clearSession();
+        location.reload();
+      };
+      document.getElementById("btnOpenDashboard").onclick = openDashboard;
+    }
+  } catch (err) {
+    console.error("renderAuthState error:", err);
   }
 }
 async function openDashboard() {
@@ -468,7 +500,7 @@ async function openDashboard() {
 
 
 async function orderService(cost, layanan){
-  const { ref, set, push } = window.firebaseTools;
+  const { ref, set, push, update } = window.firebaseTools;
   const db = window.db;
   const sess = DB.getSession();
   if(!sess){ showLogin(); return; }
@@ -489,18 +521,20 @@ async function orderService(cost, layanan){
   document.getElementById('orderFormModal').onsubmit = async (e)=>{
     e.preventDefault();
     const imei = document.getElementById('imeii').value.trim();
-    const users = DB.getUsers();
-    const sessObj = DB.getSession();
-    const u = users.find(x=>x.username === sessObj.username);
-    if(!u) return alert('Akun tidak ditemukan');
-    if(u.credits < cost) return alert('Saldo tidak cukup. Hubungi admin.');
-
-    // potong saldo di local
-    u.credits -= cost;
-    DB.saveUsers(users);
 
     try {
-      // simpan order ke Firebase yang benar
+      // Fetch user data from Firebase
+      const userRef = ref(db, "users/" + sess.username);
+      const userSnap = await get(userRef);
+      if (!userSnap.exists()) return alert('Akun tidak ditemukan');
+      const u = userSnap.val();
+      if (u.credits < cost) return alert('Saldo tidak cukup. Hubungi admin.');
+
+      // Deduct credits in Firebase
+      const newCredits = u.credits - cost;
+      await update(userRef, { credits: newCredits });
+
+      // Save order to Firebase
       const ordersRef = ref(db, "orders");
       const newOrderRef = push(ordersRef);
       await set(newOrderRef, {
@@ -554,7 +588,22 @@ document.querySelectorAll('button').forEach(btn => {
 });
 
 document.getElementById('modalClose')?.addEventListener('click', hideModal);
-if(localStorage.getItem(DB.sessionKey)) renderAuthState();
+// Tunggu sampai Firebase siap sebelum renderAuthState
+window.addEventListener("load", async () => {
+  let tries = 0;
+  const waitFirebase = setInterval(() => {
+    if (window.firebaseTools && window.db) {
+      clearInterval(waitFirebase);
+      console.log("✅ Firebase siap, render auth state...");
+      renderAuthState();
+    } else if (tries++ > 10) {
+      clearInterval(waitFirebase);
+      console.error("❌ Firebase gagal tersambung setelah 3 detik.");
+    }
+  }, 300);
+});
+
+
 </script>
 
 <!-- di atas ini isi body kamu -->
