@@ -498,6 +498,10 @@ window._DB = DB;
   // 🔥 Inisialisasi Firebase
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
+  
+// buat db & tools bisa diakses global
+window.db = db;
+window.firebaseTools = { ref, onValue, update, remove };
 
   // 🧩 Fungsi untuk ambil data orders
   async function renderOrdersFirebase() {
