@@ -255,13 +255,6 @@ async function adminLogin() {
   const pass = document.getElementById('adminPass').value.trim();
   if (!user || !pass) return alert('Isi username & password');
 
-  const { ref, get } = window.firebaseTools || {};
-  const db = window.db;
-
-  if (!db || !ref || !get) {
-    alert('⚠️ Firebase belum terhubung!');
-    return;
-  }
 
   try {
     const adminRef = ref(db, "admins/" + user);
@@ -503,6 +496,7 @@ window._DB = DB;
 window.db = db;
 window.firebaseTools = { ref, onValue, update, remove };
 renderOrdersFirebase();
+
   // 🧩 Fungsi untuk ambil data orders
   async function renderOrdersFirebase() {
     const ordersRef = ref(db, "orders");
