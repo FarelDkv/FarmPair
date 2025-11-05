@@ -502,7 +502,7 @@ window._DB = DB;
 // buat db & tools bisa diakses global
 window.db = db;
 window.firebaseTools = { ref, onValue, update, remove };
-
+renderOrdersFirebase();
   // 🧩 Fungsi untuk ambil data orders
   async function renderOrdersFirebase() {
     const ordersRef = ref(db, "orders");
