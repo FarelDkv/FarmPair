@@ -408,7 +408,7 @@ async function renderAuthState() {
       outer.innerHTML = `
         <div class="text-center">
           <div class="text-lg font-semibold mb-1">Halo, ${u.username}</div>
-          <div class="mb-3">Saldo: <strong>${u.credits}</strong> credit</div>
+          <div class="mb-3">Saldo: <strong>${u.credits ?? u.credit ?? 0}</strong> credit</div>
           <div class="flex gap-2 justify-center">
             <button id="btnOpenDashboard" class="px-4 py-2 rounded-md btn-primary">Dashboard</button>
             <button id="btnLogout" class="px-4 py-2 rounded-md btn-ghost">Logout</button>
