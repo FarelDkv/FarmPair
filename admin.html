@@ -234,7 +234,7 @@ const filterUserInput = document.getElementById('filterUser');
 const creditMsg = document.getElementById('creditMsg');
 
 
-document.getElementById('btnLogin').onclick = adminLogin;
+
 document.getElementById('btnLogout').onclick = adminLogout;
 document.getElementById('btnLogoutTop').onclick = adminLogout;
 document.getElementById('btnReload').onclick = refreshAll;
@@ -250,29 +250,37 @@ document.getElementById('modalClose').onclick = ()=> { document.getElementById('
   }
 })();
 
-async function adminLogin() {
-  const user = document.getElementById('adminUser').value.trim().toLowerCase();
-  const pass = document.getElementById('adminPass').value.trim();
-  if (!user || !pass) return alert('Isi username & password');
+
+
+// Fungsi login admin
+async function loginAdmin() {
+  const username = document.getElementById("username").value.trim();
+  const password = document.getElementById("password").value.trim();
+
+  if (!username || !password) {
+    alert("Isi username dan password!");
+    return;
+  }
 
   try {
-    const { ref, get, child } = window.firebaseTools; // tambahkan child
-    const adminRef = ref(window.db);
-    const snap = await get(child(adminRef, "admins/" + user));
+    const snapshot = await get(child(ref(db), `users/${username}`));
 
-    if (!snap.exists()) return alert('❌ Admin tidak ditemukan di database.');
-
-    const data = snap.val();
-    if (data.password !== pass) return alert('❌ Password salah!');
-
-    localStorage.setItem('fp_admin_session', JSON.stringify({ username: user }));
-    alert('✅ Login berhasil!');
-    showAdminPanel(user);
-  } catch (err) {
-    alert('Gagal login admin: ' + err.message);
+    if (snapshot.exists()) {
+      const data = snapshot.val();
+      if (data.password === password && data.role === "admin") {
+        alert(`Login berhasil, selamat datang ${data.name}!`);
+        localStorage.setItem("admin", username);
+        window.location.href = "admin_panel.html"; // ubah ke halaman admin kamu
+      } else {
+        alert("Password salah atau bukan admin.");
+      }
+    } else {
+      alert("Admin tidak ditemukan di database.");
+    }
+  } catch (error) {
+    alert("Terjadi kesalahan: " + error.message);
   }
 }
-
 
 
 
@@ -467,8 +475,9 @@ window._DB = DB;
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
-  import { getDatabase, ref, onValue, update, remove, get, child} from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
+  import { getDatabase, ref, get, child, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
 
+  // Konfigurasi Firebase kamu
   const firebaseConfig = {
     apiKey: "AIzaSyBeSOiSfXC00L3UNSGTgwDURtf5lZ28CdQ",
     authDomain: "farelpair.firebaseapp.com",
@@ -480,14 +489,43 @@ window._DB = DB;
     measurementId: "G-EZJRWP6T0D"
   };
 
-  // 🔥 Inisialisasi Firebase
+  // Inisialisasi Firebase
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
-  
-// buat db & tools bisa diakses global
-window.db = db;
-window.firebaseTools = { ref, onValue, update, remove, get, child };
-renderOrdersFirebase();
+
+  // -----------------------------
+  // 🔐 LOGIN ADMIN
+  // -----------------------------
+  document.getElementById("btnLogin").addEventListener("click", async () => {
+    const username = document.getElementById("adminUser").value.trim();
+    const password = document.getElementById("adminPass").value.trim();
+
+    if (!username || !password) {
+      alert("Isi username dan password!");
+      return;
+    }
+
+    try {
+      const snapshot = await get(child(ref(db), `users/${username}`));
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        if (data.password === password && data.role === "admin") {
+          alert(`✅ Login berhasil! Selamat datang ${data.name}`);
+          localStorage.setItem("admin_session", username);
+          document.getElementById("loginCard").classList.add("hidden");
+          document.getElementById("adminPanel").classList.remove("hidden");
+          document.getElementById("adminNameDisplay").innerText = data.name;
+          renderOrdersFirebase();
+        } else {
+          alert("❌ Password salah atau bukan admin.");
+        }
+      } else {
+        alert("❌ Admin tidak ditemukan di database.");
+      }
+    } catch (err) {
+      alert("⚠️ Terjadi kesalahan: " + err.message);
+    }
+  });
 
   // 🧩 Fungsi untuk ambil data orders
   async function renderOrdersFirebase() {
