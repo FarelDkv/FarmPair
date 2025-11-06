@@ -432,141 +432,54 @@ async function openDashboard() {
   const { ref, get } = window.firebaseTools;
   const db = window.db;
 
-  const userRef = ref(db, "users/" + sess.username);
-  const ordersRef = ref(db, "orders");
-
   try {
-    // Ambil saldo user dari Firebase
+    // Ambil data user
+    const userRef = ref(db, "users/" + sess.username);
     const userSnap = await get(userRef);
     const userData = userSnap.exists() ? userSnap.val() : { credits: 0 };
 
-    // Ambil semua order dari Firebase
+    // Ambil order user
+    const ordersRef = ref(db, "orders");
     const ordersSnap = await get(ordersRef);
     const orders = [];
     if (ordersSnap.exists()) {
       ordersSnap.forEach((snap) => {
         const order = snap.val();
-        // Simpan ID pesanan (key Firebase)
-        orders.push({
-          id: snap.key,
-          ...order
-        });
+        orders.push({ id: snap.key, ...order });
       });
     }
 
-    // Filter hanya order milik user login
     const userOrders = orders.filter(o => o.username === sess.username);
 
-    // Render modal dashboard
-    // ambil saldo terbaru dari Firebase sebelum tampilkan dashboard
-const db = getDatabase();
-const userRef = ref(db, "users/" + sess.username);
-const snap = await get(userRef);
-let latestCredits = 0;
+    // Dashboard
+    const html = `
+      <h3 class="text-lg font-semibold mb-2">Dashboard — ${sess.username}</h3>
+      <div class="mb-3">Saldo: <strong>${userData.credits ?? userData.credit ?? 0}</strong> credit</div>
+      <div class="mb-3">
+        <button id="btnTopup" class="px-3 py-2 rounded-md btn-primary">Minta Topup</button>
+        <button id="btnOrders" class="ml-2 px-3 py-2 rounded-md btn-ghost">Riwayat Order (${userOrders.length})</button>
+      </div>
+      <div id="ordersList" class="max-h-64 overflow-auto mt-3"></div>
+    `;
+    showModal(html);
 
-if (snap.exists()) {
-  const u = snap.val();
-  latestCredits = u.credits ?? u.credit ?? 0;
-} else {
-  latestCredits = userData.credits ?? 0;
-}
-
-const html = `
-  <h3 class="text-lg font-semibold mb-2">Dashboard — ${sess.username}</h3>
-  <div class="mb-3">Saldo: <strong>${latestCredits}</strong> credit</div>
-  <div class="mb-3">
-    <button id="btnTopup" class="px-3 py-2 rounded-md btn-primary">Minta Topup</button>
-    <button id="btnOrders" class="ml-2 px-3 py-2 rounded-md btn-ghost">Riwayat Order (${userOrders.length})</button>
-  </div>
-  <div id="ordersList" class="max-h-64 overflow-auto mt-3"></div>
-`;
-showModal(html);
-
-document.getElementById('btnTopup').onclick = () => window.open('https://wa.me/6282241664467', '_blank');
-
-    // Tombol lihat riwayat order
+    document.getElementById('btnTopup').onclick = () => window.open('https://wa.me/6282241664467', '_blank');
     document.getElementById('btnOrders').onclick = () => {
-      const listEl = document.getElementById('ordersList');
-      if (!userOrders.length) {
-        listEl.innerHTML = '<div class="soft text-sm">Belum ada order.</div>';
-        return;
-      }
-
-      listEl.innerHTML = userOrders.map(o => `
-        <div class="p-2 rounded-md glass mb-2">
-          <div><b>ID:</b> ${o.id}</div>
-          <div><b>IMEI:</b> ${o.imei}</div>
-          <div><b>Layanan:</b> ${o.layanan}</div>
-          <div><b>Status:</b> ${o.status}</div>
-          <div class="text-sm text-gray-400">${o.waktu || '-'}</div>
+      const list = userOrders.map(o => `
+        <div class="p-2 rounded bg-[rgba(255,255,255,0.02)] mb-2 border border-white/5">
+          <div><strong>${o.layanan}</strong></div>
+          <div>IMEI: ${o.imei}</div>
+          <div>Status: ${o.status}</div>
+          <div class="soft text-sm">${o.waktu}</div>
         </div>
       `).join('');
+      document.getElementById('ordersList').innerHTML = list || '<div class="soft">Belum ada order.</div>';
     };
 
-  } catch (error) {
-    console.error(error);
-    alert('❌ Gagal memuat data dashboard.');
+  } catch (err) {
+    console.error("openDashboard error:", err);
+    alert('❌ Gagal membuka dashboard. Lihat console.');
   }
-}
-
-
-
-
-async function orderService(cost, layanan){
-  const { ref, set, push, update, get } = window.firebaseTools;
-  const db = window.db;
-  const sess = DB.getSession();
-  if(!sess){ showLogin(); return; }
-
-  const html = `
-    <h3 class="text-lg font-semibold mb-2">Pesan: ${layanan}</h3>
-    <form id="orderFormModal" class="space-y-3 modal-fade show">
-      <input id="imeii" type="text" required placeholder="Masukkan IMEI" class="w-full p-2 rounded-md bg-[rgba(255,255,255,0.02)] border border-white/5">
-      <div class="flex gap-2">
-        <button type="submit" class="flex-1 px-3 py-2 rounded-md btn-primary">Kirim Order</button>
-        <button type="button" id="cancelOrder" class="flex-1 px-3 py-2 rounded-md btn-ghost">Batal</button>
-      </div>
-    </form>
-  `;
-  showModal(html);
-  document.getElementById('cancelOrder').onclick = hideModal;
-
-  document.getElementById('orderFormModal').onsubmit = async (e)=>{
-    e.preventDefault();
-    const imei = document.getElementById('imeii').value.trim();
-
-    try {
-      // Fetch user data from Firebase
-      const userRef = ref(db, "users/" + sess.username);
-      const userSnap = await get(userRef);
-      if (!userSnap.exists()) return alert('Akun tidak ditemukan');
-      const u = userSnap.val();
-      if (u.credits < cost) return alert('Saldo tidak cukup. Hubungi admin.');
-
-      // Deduct credits in Firebase
-      const newCredits = u.credits - cost;
-      await update(userRef, { credits: newCredits });
-
-      // Save order to Firebase
-      const ordersRef = ref(db, "orders");
-      const newOrderRef = push(ordersRef);
-      await set(newOrderRef, {
-        username: u.username,
-        imei,
-        layanan,
-        status: "Pending",
-        cost,
-        waktu: new Date().toLocaleString()
-      });
-
-      hideModal();
-      alert(`✅ Order berhasil dikirim ke admin! Saldo terpotong ${cost} credit.`);
-      renderAuthState();
-    } catch (error) {
-  console.error("🔥 Order error detail:", error);
-  alert('❌ Gagal kirim order ke Firebase. Cek console untuk detail.');
-}
-  };
 }
 
 
