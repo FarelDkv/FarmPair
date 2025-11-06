@@ -482,6 +482,65 @@ async function openDashboard() {
   }
 }
 
+async function orderService(cost, layanan) {
+  const { ref, set, push, update, get } = window.firebaseTools;
+  const db = window.db;
+  const sess = DB.getSession();
+  if (!sess) { showLogin(); return; }
+
+  const html = `
+    <h3 class="text-lg font-semibold mb-2">Pesan: ${layanan}</h3>
+    <form id="orderFormModal" class="space-y-3 modal-fade show">
+      <input id="imeii" type="text" required placeholder="Masukkan IMEI"
+        class="w-full p-2 rounded-md bg-[rgba(255,255,255,0.02)] border border-white/5">
+      <div class="flex gap-2">
+        <button type="submit" class="flex-1 px-3 py-2 rounded-md btn-primary">Kirim Order</button>
+        <button type="button" id="cancelOrder" class="flex-1 px-3 py-2 rounded-md btn-ghost">Batal</button>
+      </div>
+    </form>
+  `;
+  showModal(html);
+  document.getElementById("cancelOrder").onclick = hideModal;
+
+  document.getElementById("orderFormModal").onsubmit = async (e) => {
+    e.preventDefault();
+    const imei = document.getElementById("imeii").value.trim();
+    if (!imei) return alert("Masukkan IMEI terlebih dahulu.");
+
+    try {
+      const userRef = ref(db, "users/" + sess.username);
+      const userSnap = await get(userRef);
+
+      if (!userSnap.exists()) return alert("Akun tidak ditemukan.");
+      const user = userSnap.val();
+      const currentCredits = user.credits ?? user.credit ?? 0;
+
+      if (currentCredits < cost) return alert("Saldo tidak cukup. Hubungi admin.");
+
+      // Kurangi saldo user
+      await update(userRef, { credits: currentCredits - cost });
+
+      // Simpan order baru
+      const ordersRef = ref(db, "orders");
+      const newOrderRef = push(ordersRef);
+      await set(newOrderRef, {
+        username: sess.username,
+        imei,
+        layanan,
+        status: "Pending",
+        cost,
+        waktu: new Date().toLocaleString()
+      });
+
+      hideModal();
+      alert(`✅ Order berhasil dikirim ke admin! Saldo terpotong ${cost} credit.`);
+      renderAuthState();
+    } catch (error) {
+      console.error("🔥 Order error:", error);
+      alert("❌ Gagal kirim order ke Firebase.");
+    }
+  };
+}
 
 
 function showModal(html){
