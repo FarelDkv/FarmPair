@@ -631,6 +631,36 @@ window.addEventListener("load", async () => {
   window.firebaseTools = { ref, set, get, update, child, push };
 
   console.log("✅ Firebase berhasil tersambung");
+  
+  // Setelah Firebase siap, ambil saldo terbaru dari database setiap kali halaman dibuka
+window.addEventListener("load", async () => {
+  const sess = DB.getSession();
+  if (!sess) return;
+
+  const { ref, get } = window.firebaseTools;
+  const db = window.db;
+
+  try {
+    const userRef = ref(db, "users/" + sess.username);
+    const snap = await get(userRef);
+
+    if (snap.exists()) {
+      const user = snap.val();
+      // Update tampilan saldo di login box (kalau sudah login)
+      const saldoEl = document.querySelector("#auth-outer strong");
+      if (saldoEl) saldoEl.textContent = user.credits + " credit";
+
+      // Simpan juga ke localStorage
+      localStorage.setItem("latest_credit", user.credits);
+      console.log("💰 Saldo diperbarui:", user.credits);
+    } else {
+      console.warn("User tidak ditemukan di database");
+    }
+  } catch (err) {
+    console.error("Gagal ambil data saldo:", err);
+  }
+});
+
 </script>
 
 </body>
