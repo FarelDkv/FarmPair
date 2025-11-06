@@ -589,6 +589,91 @@ window._DB = DB;
   });
 }
  
+// 🔹 Render daftar pengguna (users + admin)
+function renderUsersFirebase() {
+  const usersRef = ref(db, "users");
+  const tbody = document.getElementById("usersTableBody");
+
+  onValue(usersRef, (snapshot) => {
+    tbody.innerHTML = "";
+    if (!snapshot.exists()) {
+      tbody.innerHTML = `<tr><td colspan="5" class="soft p-3">Belum ada pengguna.</td></tr>`;
+      return;
+    }
+
+    snapshot.forEach((childSnap) => {
+      const username = childSnap.key;
+      const data = childSnap.val();
+
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${username}</td>
+        <td>${data.name || "-"}</td>
+        <td class="text-right">${data.credit || 0}</td>
+        <td class="text-right">${data.role || "-"}</td>
+        <td class="text-right">
+          <button class="btn-ghost btn-credit" data-user="${username}">+ Kredit</button>
+          <button class="btn-ghost btn-delete-user" data-user="${username}">🗑️</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    // Tambah kredit
+    document.querySelectorAll(".btn-credit").forEach((btn) => {
+      btn.addEventListener("click", async (e) => {
+        const username = e.target.dataset.user;
+        const tambah = parseInt(prompt(`Tambah kredit untuk ${username}:`), 10);
+        if (isNaN(tambah)) return alert("Jumlah tidak valid.");
+
+        const snap = await get(child(ref(db), "users/" + username));
+        if (!snap.exists()) return alert("User tidak ditemukan!");
+
+        const userData = snap.val();
+        const newCredit = (userData.credit || 0) + tambah;
+        await update(ref(db, "users/" + username), { credit: newCredit });
+        alert(`✅ Kredit ${username} sekarang: ${newCredit}`);
+      });
+    });
+
+    // Hapus user
+    document.querySelectorAll(".btn-delete-user").forEach((btn) => {
+      btn.addEventListener("click", async (e) => {
+        const username = e.target.dataset.user;
+        if (confirm(`Hapus user "${username}"?`)) {
+          await remove(ref(db, "users/" + username));
+          alert(`🗑️ User ${username} dihapus.`);
+        }
+      });
+    });
+  });
+}
+
+// 🔹 Tombol tambah kredit manual (yang bawah tabel)
+document.getElementById("btnAddCredit").addEventListener("click", async () => {
+  const username = document.getElementById("creditUsername").value.trim();
+  const amount = parseInt(document.getElementById("creditAmount").value.trim(), 10);
+  const msg = document.getElementById("creditMsg");
+
+  if (!username || isNaN(amount) || amount <= 0) {
+    msg.innerText = "⚠️ Isi username dan jumlah kredit yang valid.";
+    return;
+  }
+
+  const snap = await get(child(ref(db), "users/" + username));
+  if (!snap.exists()) {
+    msg.innerText = "❌ User tidak ditemukan di database.";
+    return;
+  }
+
+  const data = snap.val();
+  const newCredit = (data.credit || 0) + amount;
+  await update(ref(db), { ["users/" + username + "/credit"]: newCredit });
+  msg.innerText = `✅ Kredit ${username} berhasil ditambah. Total: ${newCredit}`;
+  document.getElementById("creditUsername").value = "";
+  document.getElementById("creditAmount").value = "";
+});
+
 
   // ✅ Jalankan render setelah fungsi didefinisikan
   renderOrdersFirebase();
