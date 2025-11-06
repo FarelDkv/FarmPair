@@ -650,29 +650,45 @@ function renderUsersFirebase() {
 }
 
 // 🔹 Tombol tambah kredit manual (yang bawah tabel)
-document.getElementById("btnAddCredit").addEventListener("click", async () => {
-  const username = document.getElementById("creditUsername").value.trim();
-  const amount = parseInt(document.getElementById("creditAmount").value.trim(), 10);
-  const msg = document.getElementById("creditMsg");
+// Tombol tambah credit di admin.html
+document.getElementById('btnAddCredit').onclick = async () => {
+  const username = document.getElementById('creditUsername').value.trim().toLowerCase();
+  const amount = parseInt(document.getElementById('creditAmount').value.trim(), 10);
+  const msg = document.getElementById('creditMsg');
+  msg.textContent = '';
 
   if (!username || isNaN(amount) || amount <= 0) {
-    msg.innerText = "⚠️ Isi username dan jumlah kredit yang valid.";
+    msg.textContent = '❌ Username dan jumlah harus valid.';
     return;
   }
 
-  const snap = await get(child(ref(db), "users/" + username));
-  if (!snap.exists()) {
-    msg.innerText = "❌ User tidak ditemukan di database.";
-    return;
-  }
+  try {
+    const { ref, get, update } = window.firebaseTools;
+    const db = window.db;
 
-  const data = snap.val();
-  const newCredit = (data.credit || 0) + amount;
-  await update(ref(db), { ["users/" + username + "/credit"]: newCredit });
-  msg.innerText = `✅ Kredit ${username} berhasil ditambah. Total: ${newCredit}`;
-  document.getElementById("creditUsername").value = "";
-  document.getElementById("creditAmount").value = "";
-});
+    const userRef = ref(db, 'users/' + username);
+    const snap = await get(userRef);
+
+    if (!snap.exists()) {
+      msg.textContent = '❌ Pengguna tidak ditemukan di database.';
+      return;
+    }
+
+    const userData = snap.val();
+    const newCredit = (userData.credits || 0) + amount;
+
+    await update(userRef, { credits: newCredit });
+
+    msg.textContent = `✅ Credit berhasil ditambahkan. Saldo baru: ${newCredit}`;
+    document.getElementById('creditUsername').value = '';
+    document.getElementById('creditAmount').value = '';
+
+  } catch (err) {
+    console.error(err);
+    msg.textContent = '❌ Gagal menambah credit: ' + err.message;
+  }
+};
+
 
 
   // ✅ Jalankan render setelah fungsi didefinisikan
