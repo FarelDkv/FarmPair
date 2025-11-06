@@ -458,18 +458,31 @@ async function openDashboard() {
     const userOrders = orders.filter(o => o.username === sess.username);
 
     // Render modal dashboard
-    const html = `
-      <h3 class="text-lg font-semibold mb-2">Dashboard — ${sess.username}</h3>
-      <div class="mb-3">Saldo: <strong>${userData.credits}</strong> credit</div>
-      <div class="mb-3">
-        <button id="btnTopup" class="px-3 py-2 rounded-md btn-primary">Minta Topup</button>
-        <button id="btnOrders" class="ml-2 px-3 py-2 rounded-md btn-ghost">Riwayat Order (${userOrders.length})</button>
-      </div>
-      <div id="ordersList" class="max-h-64 overflow-auto mt-3"></div>
-    `;
-    showModal(html);
+    // ambil saldo terbaru dari Firebase sebelum tampilkan dashboard
+const db = getDatabase();
+const userRef = ref(db, "users/" + sess.username);
+const snap = await get(userRef);
+let latestCredits = 0;
 
-    document.getElementById('btnTopup').onclick = () => window.open('https://wa.me/6282241664467', '_blank');
+if (snap.exists()) {
+  const u = snap.val();
+  latestCredits = u.credits ?? u.credit ?? 0;
+} else {
+  latestCredits = userData.credits ?? 0;
+}
+
+const html = `
+  <h3 class="text-lg font-semibold mb-2">Dashboard — ${sess.username}</h3>
+  <div class="mb-3">Saldo: <strong>${latestCredits}</strong> credit</div>
+  <div class="mb-3">
+    <button id="btnTopup" class="px-3 py-2 rounded-md btn-primary">Minta Topup</button>
+    <button id="btnOrders" class="ml-2 px-3 py-2 rounded-md btn-ghost">Riwayat Order (${userOrders.length})</button>
+  </div>
+  <div id="ordersList" class="max-h-64 overflow-auto mt-3"></div>
+`;
+showModal(html);
+
+document.getElementById('btnTopup').onclick = () => window.open('https://wa.me/6282241664467', '_blank');
 
     // Tombol lihat riwayat order
     document.getElementById('btnOrders').onclick = () => {
