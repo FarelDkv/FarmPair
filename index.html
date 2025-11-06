@@ -513,7 +513,7 @@ document.getElementById('btnTopup').onclick = () => window.open('https://wa.me/6
 
 
 async function orderService(cost, layanan){
-  const { ref, set, push, update } = window.firebaseTools;
+  const { ref, set, push, update, get } = window.firebaseTools;
   const db = window.db;
   const sess = DB.getSession();
   if(!sess){ showLogin(); return; }
