@@ -513,12 +513,12 @@ async function orderService(cost, layanan) {
 
       if (!userSnap.exists()) return alert("Akun tidak ditemukan.");
       const user = userSnap.val();
-      const currentCredits = user.credits ?? user.credit ?? 0;
+      const currentCredit = user.credit ?? user.credit ?? 0;
 
-      if (currentCredits < cost) return alert("Saldo tidak cukup. Hubungi admin.");
+      if (currentCredit < cost) return alert("Saldo tidak cukup. Hubungi admin.");
 
       // Kurangi saldo user
-      await update(userRef, { credits: currentCredits - cost });
+      await update(userRef, { credit: currentCredit - cost });
 
       // Simpan order baru
       const ordersRef = ref(db, "orders");
