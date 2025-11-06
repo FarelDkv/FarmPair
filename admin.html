@@ -256,9 +256,9 @@ async function adminLogin() {
   if (!user || !pass) return alert('Isi username & password');
 
   try {
-    const { ref, get } = window.firebaseTools; // ambil dari global
-    const adminRef = ref(window.db, "admins/" + user);
-    const snap = await get(adminRef);
+    const { ref, get, child } = window.firebaseTools; // tambahkan child
+    const adminRef = ref(window.db);
+    const snap = await get(child(adminRef, "admins/" + user));
 
     if (!snap.exists()) return alert('❌ Admin tidak ditemukan di database.');
 
@@ -272,6 +272,7 @@ async function adminLogin() {
     alert('Gagal login admin: ' + err.message);
   }
 }
+
 
 
 
@@ -466,7 +467,7 @@ window._DB = DB;
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
-  import { getDatabase, ref, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
+  import { getDatabase, ref, onValue, update, remove, get, child} from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyBeSOiSfXC00L3UNSGTgwDURtf5lZ28CdQ",
@@ -485,7 +486,7 @@ window._DB = DB;
   
 // buat db & tools bisa diakses global
 window.db = db;
-window.firebaseTools = { ref, onValue, update, remove };
+window.firebaseTools = { ref, onValue, update, remove, get, child };
 renderOrdersFirebase();
 
   // 🧩 Fungsi untuk ambil data orders
