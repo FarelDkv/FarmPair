@@ -319,7 +319,7 @@ function renderUsers(){
     return `<tr class="border-t border-white/6">
       <td class="font-medium">${u.username}</td>
       <td class="soft">${u.name || '-'}</td>
-      <td class="text-right font-semibold">${u.credits || 0}</td>
+      <td class="text-right font-semibold">${u.credit || 0}</td>
       <td class="text-right soft">${u.role || 'user'}</td>
       <td class="text-right">
         <button class="btn-ghost btn-view" data-username="${u.username}">Lihat</button>
@@ -374,21 +374,40 @@ async function showUserDetail(username) {
 }
 
 
-function handleAddCredit(){
+async function handleAddCredit() {
+  if (!window.firebaseTools || !window.db) {
+    return alert("❌ Firebase belum siap. Coba muat ulang halaman dulu.");
+  }
+
+  const { ref, get, update } = window.firebaseTools;
+  const db = window.db;
+
   const uname = (document.getElementById('creditUsername').value || '').trim().toLowerCase();
   const amount = parseInt(document.getElementById('creditAmount').value);
-  if(!uname) return alert('Masukkan username tujuan');
-  if(!amount || amount <= 0) return alert('Masukkan jumlah credit yang valid');
-  let users = DB.getUsers();
-  const idx = users.findIndex(u=>u.username === uname);
-  if(idx === -1) return alert('⚠️ Username tidak ditemukan');
-  users[idx].credits = (users[idx].credits || 0) + amount;
-  DB.saveUsers(users);
-  creditMsg.innerText = `✅ Berhasil menambah ${amount} credit ke ${uname}`;
-  document.getElementById('creditUsername').value = '';
-  document.getElementById('creditAmount').value = '';
-  renderUsers();
+  if (!uname) return alert('Masukkan username tujuan');
+  if (!amount || amount <= 0) return alert('Masukkan jumlah credit yang valid');
+
+  try {
+    const userRef = ref(db, 'users/' + uname);
+    const snap = await get(userRef);
+    if (!snap.exists()) return alert('⚠️ Username tidak ditemukan di Firebase');
+
+    const user = snap.val();
+    const currentCredit = user.credit ?? user.credit ?? 0;
+    const newCredit = currentCredit + amount;
+
+    await update(userRef, { credit: newCredit });
+
+    alert(`✅ Berhasil menambah ${amount} credit ke ${uname}. Saldo baru: ${newCredit}`);
+    document.getElementById('creditUsername').value = '';
+    document.getElementById('creditAmount').value = '';
+  } catch (err) {
+    console.error('❌ Gagal menambah credit:', err);
+    alert('Terjadi kesalahan saat update credit. Lihat console.');
+  }
 }
+
+
 
 
 // Orders dari Firebase
@@ -663,9 +682,6 @@ document.getElementById('btnAddCredit').onclick = async () => {
   }
 
   try {
-    const { ref, get, update } = window.firebaseTools;
-    const db = window.db;
-
     const userRef = ref(db, 'users/' + username);
     const snap = await get(userRef);
 
@@ -675,14 +691,12 @@ document.getElementById('btnAddCredit').onclick = async () => {
     }
 
     const userData = snap.val();
-    const newCredit = (userData.credits || 0) + amount;
-
-    await update(userRef, { credits: newCredit });
+    const newCredit = (userData.credit || 0) + amount;
+    await update(userRef, { credit: newCredit });
 
     msg.textContent = `✅ Credit berhasil ditambahkan. Saldo baru: ${newCredit}`;
     document.getElementById('creditUsername').value = '';
     document.getElementById('creditAmount').value = '';
-
   } catch (err) {
     console.error(err);
     msg.textContent = '❌ Gagal menambah credit: ' + err.message;

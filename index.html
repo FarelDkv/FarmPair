@@ -268,7 +268,7 @@ const DB = {
   ordersKey: 'fp_orders',
   init(){
     if(!localStorage.getItem(this.usersKey)){
-      const admin = { username:'admin', password:'farel123', credits:1000, role:'admin' };
+      const admin = { username:'admin', password:'farel123', credit:1000, role:'admin' };
       localStorage.setItem(this.usersKey, JSON.stringify([admin]));
     }
     if(!localStorage.getItem(this.ordersKey)) localStorage.setItem(this.ordersKey, JSON.stringify([]));
@@ -638,7 +638,7 @@ window.addEventListener("load", async () => {
     }
 
     const user = snap.val();
-    const saldo = user.credits ?? user.credit ?? 0;
+    const saldo = user.credit ?? user.credit ?? 0;
 
     // Update tampilan saldo di dashboard utama
     const saldoEl = document.querySelector("#auth-outer strong");
