@@ -631,30 +631,39 @@ window.addEventListener("load", async () => {
   window.firebaseTools = { ref, set, get, update, child, push };
 
   console.log("✅ Firebase berhasil tersambung");
-  
+
   // Setelah Firebase siap, ambil saldo terbaru dari database setiap kali halaman dibuka
 window.addEventListener("load", async () => {
-  const sess = DB.getSession();
+  const sess = localStorage.getItem("session");
   if (!sess) return;
 
-  const { ref, get } = window.firebaseTools;
-  const db = window.db;
-
+  let username;
   try {
-    const userRef = ref(db, "users/" + sess.username);
-    const snap = await get(userRef);
+    const sessionData = JSON.parse(sess);
+    username = sessionData.username;
+  } catch {
+    console.warn("Session tidak valid");
+    return;
+  }
 
+  if (!username) return;
+
+  const db = getDatabase();
+  const userRef = ref(db, username); // karena user disimpan langsung di root, bukan di /users/
+  try {
+    const snap = await get(userRef);
     if (snap.exists()) {
       const user = snap.val();
-      // Update tampilan saldo di login box (kalau sudah login)
-      const saldoEl = document.querySelector("#auth-outer strong");
-      if (saldoEl) saldoEl.textContent = user.credits + " credit";
+      // karena di Firebase kadang "credit" kadang "credits"
+      const saldo = user.credits ?? user.credit ?? 0;
 
-      // Simpan juga ke localStorage
-      localStorage.setItem("latest_credit", user.credits);
-      console.log("💰 Saldo diperbarui:", user.credits);
+      // tampilkan di dashboard
+      const saldoEl = document.querySelector("#auth-outer strong");
+      if (saldoEl) saldoEl.textContent = saldo + " credit";
+
+      console.log("✅ Saldo diperbarui:", saldo);
     } else {
-      console.warn("User tidak ditemukan di database");
+      console.warn("User tidak ditemukan:", username);
     }
   } catch (err) {
     console.error("Gagal ambil data saldo:", err);
