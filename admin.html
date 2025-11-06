@@ -255,29 +255,20 @@ async function adminLogin() {
   const pass = document.getElementById('adminPass').value.trim();
   if (!user || !pass) return alert('Isi username & password');
 
-
   try {
-    const adminRef = ref(db, "admins/" + user);
+    const { ref, get } = window.firebaseTools; // ambil dari global
+    const adminRef = ref(window.db, "admins/" + user);
     const snap = await get(adminRef);
 
-    if (!snap.exists()) {
-      alert('❌ Admin tidak ditemukan di database.');
-      return;
-    }
+    if (!snap.exists()) return alert('❌ Admin tidak ditemukan di database.');
 
     const data = snap.val();
-    if (data.password !== pass) {
-      alert('❌ Password salah!');
-      return;
-    }
+    if (data.password !== pass) return alert('❌ Password salah!');
 
-    // Simpan sesi admin di localStorage
     localStorage.setItem('fp_admin_session', JSON.stringify({ username: user }));
-
     alert('✅ Login berhasil!');
     showAdminPanel(user);
   } catch (err) {
-    console.error('Login error:', err);
     alert('Gagal login admin: ' + err.message);
   }
 }
