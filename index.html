@@ -634,42 +634,36 @@ window.addEventListener("load", async () => {
 
   // Setelah Firebase siap, ambil saldo terbaru dari database setiap kali halaman dibuka
 window.addEventListener("load", async () => {
-  const sess = localStorage.getItem("session");
-  if (!sess) return;
-
-  let username;
   try {
-    const sessionData = JSON.parse(sess);
-    username = sessionData.username;
-  } catch {
-    console.warn("Session tidak valid");
-    return;
-  }
+    // ambil session dari localStorage
+    const sessRaw = localStorage.getItem("fp_session");
+    if (!sessRaw) return; // belum login
 
-  if (!username) return;
+    const sess = JSON.parse(sessRaw);
+    const username = sess.username;
+    if (!username) return;
 
-  const db = getDatabase();
-  const userRef = ref(db, username); // karena user disimpan langsung di root, bukan di /users/
-  try {
+    const db = getDatabase();
+    const userRef = ref(db, "users/" + username); // path yang benar
+
     const snap = await get(userRef);
-    if (snap.exists()) {
-      const user = snap.val();
-      // karena di Firebase kadang "credit" kadang "credits"
-      const saldo = user.credits ?? user.credit ?? 0;
-
-      // tampilkan di dashboard
-      const saldoEl = document.querySelector("#auth-outer strong");
-      if (saldoEl) saldoEl.textContent = saldo + " credit";
-
-      console.log("✅ Saldo diperbarui:", saldo);
-    } else {
-      console.warn("User tidak ditemukan:", username);
+    if (!snap.exists()) {
+      console.warn("❌ User tidak ditemukan di database:", username);
+      return;
     }
+
+    const user = snap.val();
+    const saldo = user.credits ?? user.credit ?? 0;
+
+    // Update tampilan saldo di dashboard utama
+    const saldoEl = document.querySelector("#auth-outer strong");
+    if (saldoEl) saldoEl.textContent = saldo + " credit";
+
+    console.log("✅ Saldo user diperbarui:", saldo);
   } catch (err) {
-    console.error("Gagal ambil data saldo:", err);
+    console.error("Gagal memuat saldo:", err);
   }
 });
-
 </script>
 
 </body>
