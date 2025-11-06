@@ -563,9 +563,9 @@ async function orderService(cost, layanan){
       alert(`✅ Order berhasil dikirim ke admin! Saldo terpotong ${cost} credit.`);
       renderAuthState();
     } catch (error) {
-      console.error(error);
-      alert('❌ Gagal kirim order ke Firebase.');
-    }
+  console.error("🔥 Order error detail:", error);
+  alert('❌ Gagal kirim order ke Firebase. Cek console untuk detail.');
+}
   };
 }
 
